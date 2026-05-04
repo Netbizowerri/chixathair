@@ -8,7 +8,7 @@ This guide covers deploying the Express.js payment backend to Render's free tier
 - Paystack secret key (from Paystack Dashboard → Settings → API Keys)
 - Firebase service account key (JSON)
 
-## Step 1: Create a Firebase Service Account
+## Step 1: Get Firebase Service Account Key
 
 1. Go to [Firebase Console](https://console.firebase.google.com/) → Project Settings → **Service Accounts**
 2. Click **"Generate new private key"**
@@ -22,98 +22,76 @@ You need these fields:
 - `client_id`
 - `client_x509_cert_url`
 
-## Step 2: Push to GitHub (Optional — Recommended)
-
-Create a new repository on GitHub and push your code:
-
-```bash
-# From project root
-git init
-git add .
-git commit -m "Initial commit with Paystack payment backend"
-git branch -M main
-git remote add origin https://github.com/yourusername/your-repo-name.git
-git push -u origin main
-```
-
-## Step 3: Deploy on Render
+## Step 2: Deploy on Render
 
 1. Sign up / log in to [Render](https://render.com/)
 2. Click **"New +"** → **"Web Service"**
-3. Connect your GitHub repository (or use manual deploy)
+3. Connect your GitHub repository: `Netbizowerri/chixathair`
 4. Configure the service:
 
-   **Name:** `chixat-hair-api` (or any name)
+   **Name:** `chixat-hair-api`
    **Environment:** `Node`
-   **Region:** Choose closest to you
+   **Region:** Choose closest to Nigeria (Lagos/Frankfurt)
    **Branch:** `main`
-   **Build Command:**
-   ```bash
-   npm install
-   ```
-   **Start Command:**
-   ```bash
-   npm start
-   ```
+   **Root Directory:** `server` ← IMPORTANT
+   **Build Command:** `npm install`
+   **Start Command:** `npm start`
 
-5. Click **"Advanced"** → Add Environment Variables:
-
-   **Required:**
-   ```
-   PAYSTACK_SECRET_KEY = sk_live_your_secret_key_here
-   FIREBASE_PROJECT_ID = chixathair
-   FIREBASE_PRIVATE_KEY_ID = your_private_key_id_from_json
-   FIREBASE_PRIVATE_KEY = your_full_private_key_with_newlines_escaped
-   FIREBASE_CLIENT_EMAIL = firebase-adminsdk-xxxxx@chixathair.iam.gserviceaccount.com
-   FIREBASE_CLIENT_ID = your_client_id
-   FIREBASE_CLIENT_X509_CERT_URL = https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-xxxxx%40chixathair.iam.gserviceaccount.com
-   FRONTEND_URL = https://your-frontend-domain.com
-   ```
-
-   **How to format `FIREBASE_PRIVATE_KEY`:**
-   - Copy the entire private key from JSON (includes `-----BEGIN PRIVATE KEY-----` and `-----END PRIVATE KEY-----`)
-   - Replace actual newlines with `\n` (literal backslash-n)
-   - Example: `-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANB ... \n-----END PRIVATE KEY-----`
-
+5. Add Environment Variables (see table below)
 6. Click **"Create Web Service"**
 
-Render will build and deploy. Your API will be live at:
-```
-https://chixat-hair-api.onrender.com
-```
+## Step 3: Environment Variables
 
-## Step 4: Update Frontend Environment
+Add these in Render dashboard:
 
-Add your Render URL to your frontend `.env.local`:
+| Variable | Value |
+|----------|-------|
+| `PAYSTACK_SECRET_KEY` | Your Paystack **Secret Key** (starts with `sk_live_` or `sk_test_`) |
+| `FIREBASE_PROJECT_ID` | `chixathair` |
+| `FIREBASE_PRIVATE_KEY_ID` | From service account JSON |
+| `FIREBASE_PRIVATE_KEY` | Full private key (replace newlines with `\n`) |
+| `FIREBASE_CLIENT_EMAIL` | From service account JSON |
+| `FIREBASE_CLIENT_ID` | From service account JSON |
+| `FIREBASE_CLIENT_X509_CERT_URL` | From service account JSON |
+| `FRONTEND_URL` | Your frontend URL (e.g., `https://yourdomain.com`) |
+| `NODE_ENV` | `production` |
+
+## Step 4: Update Frontend `.env.local`
+
+After Render deploys, update your frontend `.env.local`:
 
 ```bash
 VITE_BACKEND_URL=https://chixat-hair-api.onrender.com
 ```
 
+**Note:** Paystack public key is not required for Payment Page redirects.
+
 ## Step 5: Test the Payment Flow
 
-1. Visit your site at `http://localhost:5173`
-2. Add items to cart, go to checkout
-3. Pay with Paystack popup (test mode works with test cards)
-4. After payment, check Firestore → `orders` collection for new order
+1. Visit your site at `https://yourdomain.com`
+2. Add items to cart → Checkout → Pay with Paystack
+3. After payment, you'll be redirected to `/thank-you`
+4. Check:
+   - Firestore → `orders` collection (new order should appear)
+   - Privyr inbox (order notification sent automatically)
 
-## Important Notes
+## How It Works
 
-- Render free tier **sleeps after 15 mins of inactivity** — first request after sleep takes ~30s to wake. This won't affect payment callbacks.
-- Deploy logs show any build errors; fix and redeploy if needed.
-- Paystack secret key is **server-side only** — never exposed to frontend.
-- Firebase credentials are stored as **encrypted environment variables** on Render.
+- Frontend redirects to Paystack hosted payment page
+- Paystack calls your backend `/api/verify-payment` (via frontend fetch after success)
+- Backend verifies payment with Paystack, creates order in Firestore, sends notification to Privyr
+- Customer sees thank-you page with payment reference
 
 ## Troubleshooting
 
-**"Cannot find module 'firebase-admin'"**
-→ Ensure `npm install` ran during build (check build logs)
-
-**Firebase permission errors**
-→ Verify service account has "Cloud Datastore User" role in IAM
-
-**CORS errors**
-→ Confirm `FRONTEND_URL` env var matches your site domain exactly
+**Build fails with "vite not found"**
+→ Ensure Root Directory is set to `server` in Render settings
 
 **Payment verification fails**
-→ Double-check Paystack secret key is live (not test key), and amount matches exactly (in kobo)
+→ Check Paystack secret key is correct (live vs test mode)
+
+**Firebase permission errors**
+→ Verify service account has "Cloud Datastore User" role
+
+**Privyr notifications not arriving**
+→ Check Render logs for Privyr API errors; ensure webhook URL is correct

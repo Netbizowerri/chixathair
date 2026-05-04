@@ -42,6 +42,51 @@ const initializeFirebase = () => {
   console.log('✅ Firebase Admin initialized');
 };
 
+// Send order notification to Privyr
+const sendPrivyrNotification = async (order, orderId) => {
+  const privyrUrl = 'https://www.privyr.com/api/v1/incoming-leads/0vZfjMQw/GH2rwKlg';
+
+  const itemsSummary = order.items.map(item =>
+    `${item.name} (x${item.quantity}) — ₦${(item.price * item.quantity).toLocaleString()}`
+  ).join('\n');
+
+  const payload = {
+    first_name: order.customerName.split(' ')[0],
+    last_name: order.customerName.split(' ')[1] || '',
+    email: order.email,
+    phone: order.shippingInfo?.phone || '',
+    message: `New Order #${orderId}\n\nItems:\n${itemsSummary}\n\nTotal: ₦${order.totalAmount.toLocaleString()}\nShipping: ${order.shippingInfo?.shippingLabel || 'N/A'}\nAddress: ${order.shippingInfo?.address || ''}\n\nPayment Reference: ${order.paymentReference}`,
+    source: 'Website Checkout',
+    utm_source: 'chixathair-website',
+    utm_medium: 'checkout',
+    utm_campaign: 'online-orders',
+    custom_fields: {
+      'Order ID': orderId,
+      'Total Amount': `₦${order.totalAmount.toLocaleString()}`,
+      'Destination': order.shippingInfo?.destination || '',
+      'Shipping Method': order.shippingInfo?.shippingLabel || '',
+      'Payment Reference': order.paymentReference,
+      'Items': order.items.map(i => `${i.name} x${i.quantity}`).join(', ')
+    }
+  };
+
+  try {
+    const response = await fetch(privyrUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.ok) {
+      console.log('✅ Privyr notification sent');
+    } else {
+      console.error('❌ Privyr error:', response.status, await response.text());
+    }
+  } catch (error) {
+    console.error('❌ Failed to send Privyr notification:', error.message);
+  }
+};
+
 // Verify Paystack payment and create order
 app.post('/api/verify-payment', async (req, res) => {
   try {
@@ -101,6 +146,9 @@ app.post('/api/verify-payment', async (req, res) => {
     const docRef = await db.collection('orders').add(order);
 
     console.log(`✅ Order created: ${docRef.id}`);
+
+    // Send notification to Privyr (non-blocking)
+    sendPrivyrNotification(order, docRef.id).catch(console.error);
 
     res.json({
       success: true,
