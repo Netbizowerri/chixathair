@@ -3,6 +3,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { CartItem } from '../types';
 import { ArrowLeft, Lock, Loader2, Globe, MapPin } from 'lucide-react';
 import { useCurrency } from '../context/currency';
+import { usePaystackPayment } from 'react-paystack';
+import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirebase } from '../services/firebase';
 
 const SHIPPING_DATA = {
   NIGERIA: {
@@ -95,16 +98,74 @@ const Checkout: React.FC<CheckoutProps> = ({ cart, clearCart }) => {
         }
       };
 
-      // Build Paystack payment page URL with query params
-      const paystackPageUrl = 'https://paystack.shop/pay/chixathairpay';
-      const params = new URLSearchParams({
-        email: formData.email,
-        amount: (total * 100).toString(),
-        metadata: JSON.stringify(orderData)
-      });
+      // Initialize Firebase
+      getFirebase();
 
-      // Redirect to Paystack payment page
-      window.location.href = `${paystackPageUrl}?${params.toString()}`;
+      // Configure Paystack payment
+      const paystackConfig = {
+        reference: `chx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        email: formData.email,
+        amount: total * 100, // Paystack expects amount in kobo
+        publicKey: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
+        firstname: formData.firstName,
+        lastname: formData.lastName,
+        phone: formData.phone,
+        metadata: {
+          custom_fields: [
+            {
+              display_name: "Shipping Address",
+              variable_name: "shipping_address",
+              value: formData.address
+            },
+            {
+              display_name: "Destination",
+              variable_name: "destination",
+              value: formData.location
+            }
+          ]
+        }
+      };
+
+      // Initialize Paystack payment
+      const initializePayment = usePaystackPayment(paystackConfig);
+
+      // Save order to Firestore
+      const saveOrderToFirestore = async (reference: string) => {
+        const db = getFirestore();
+        const order = {
+          customerName: orderData.customerName,
+          email: orderData.email,
+          items: orderData.items,
+          totalAmount: orderData.totalAmount,
+          shippingInfo: orderData.shippingInfo,
+          paymentReference: reference,
+          paymentMethod: 'paystack',
+          status: 'Paid',
+          createdAt: serverTimestamp()
+        };
+        await addDoc(collection(db, 'orders'), order);
+      };
+
+      // Payment success handler
+      const onSuccess = async (reference: any) => {
+        try {
+          await saveOrderToFirestore(reference.reference);
+          clearCart();
+          navigate('/thank-you', { state: { name: formData.firstName } });
+        } catch (err) {
+          console.error('Order save failed:', err);
+          alert('Payment succeeded but order save failed. Please contact support.');
+        }
+      };
+
+      // Payment cancel handler
+      const onClose = () => {
+        setLoading(false);
+        alert('Payment was cancelled.');
+      };
+
+      // Trigger Paystack popup
+      initializePayment(onSuccess, onClose);
 
     } catch (error: any) {
       console.error("Payment error:", error);
