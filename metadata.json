@@ -1,0 +1,8 @@
+{
+  "name": "Chixat Hair DB",
+  "description": "A high-end, world-class e-commerce platform for Chixat Hair by Edna. Featuring premium extensions, wigs, and bundles with a personalized AI stylist.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

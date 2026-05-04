@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Chixat Hair | Premium Luxury Extensions by Edna</title>
+  <link rel="icon" type="image/png" href="https://i.ibb.co/mC6Fmvq7/icon-3.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+    rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#ae7a27',
+              light: '#cfa86b',
+              dark: '#8a5f1e',
+              soft: '#fdf8f0'
+            }
+          },
+          fontFamily: {
+            sans: ['Poppins', 'sans-serif'],
+            serif: ['Poppins', 'sans-serif'],
+          },
+          borderRadius: {
+            '4xl': '2rem',
+            '5xl': '2.5rem',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #fcfbf7;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      color: #1a1a1a;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #ae7a27;
+      border-radius: 10px;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    @keyframes disintegrate {
+      0% {
+        transform: scale(1);
+        filter: blur(0px);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(1.05);
+        filter: blur(10px);
+        opacity: 0;
+      }
+    }
+
+    @keyframes assemble {
+      0% {
+        transform: scale(1.1);
+        filter: blur(10px);
+        opacity: 0;
+      }
+
+      100% {
+        transform: scale(1);
+        filter: blur(0px);
+        opacity: 1;
+      }
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(0px);
+      }
+
+      50% {
+        transform: translateY(-10px);
+      }
+
+      100% {
+        transform: translateY(0px);
+      }
+    }
+
+    .animate-float {
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .animate-disintegrate {
+      animation: disintegrate 0.8s ease-in forwards;
+    }
+
+    .animate-assemble {
+      animation: assemble 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .text-reveal {
+      overflow: hidden;
+    }
+
+    .text-reveal>span {
+      display: block;
+      transform: translateY(110%);
+      animation: revealUp 0.8s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+    }
+
+    @keyframes revealUp {
+      to {
+        transform: translateY(0);
+      }
+    }
+
+    .btn-press:active {
+      transform: scale(0.96);
+    }
+  </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@19.0.0",
+    "react/": "https://esm.sh/react@19.0.0/",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/": "https://esm.sh/react-dom@19.0.0/",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "react-router-dom": "https://esm.sh/react-router-dom@7.1.3?deps=react@19.0.0,react-dom@19.0.0",
+    "lucide-react": "https://esm.sh/lucide-react@0.474.0?deps=react@19.0.0",
+    "@google/genai": "https://esm.sh/@google/genai@1.3.0",
+    "firebase/app": "https://esm.sh/firebase@11.1.0/app",
+    "firebase/firestore": "https://esm.sh/firebase@11.1.0/firestore?deps=firebase@11.1.0/app",
+    "firebase/storage": "https://esm.sh/firebase@11.1.0/storage?deps=firebase@11.1.0/app",
+    "firebase/": "https://esm.sh/firebase@^12.9.0/"
+  }
+}
+</script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+
+  <body class="overflow-x-hidden">
+  <script src="https://js.paystack.co/v1/inline.js"></script>
+   <div id="root"></div>
+   <script type="module" src="./index.tsx"></script>
+   <script type="module" src="/index.tsx"></script>
+ </body>
+
+</html>
