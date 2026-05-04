@@ -78,9 +78,9 @@ const Checkout: React.FC<CheckoutProps> = ({ cart, clearCart }) => {
       alert("Please select your delivery destination to calculate shipping.");
       return;
     }
-     setLoading(true);
+    setLoading(true);
 
-     try {
+    try {
       const orderData = {
         customerName: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
@@ -95,54 +95,16 @@ const Checkout: React.FC<CheckoutProps> = ({ cart, clearCart }) => {
         }
       };
 
-      const paystackRef = `chx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Build Paystack payment page URL with query params
+      const paystackPageUrl = 'https://paystack.shop/pay/chixathairpay';
+      const params = new URLSearchParams({
+        email: formData.email,
+        amount: (total * 100).toString(),
+        metadata: JSON.stringify(orderData)
+      });
 
-      const paystackConfig = {
-         key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
-         email: formData.email,
-         amount: total * 100,
-         ref: paystackRef,
-         metadata: {
-           orderData: JSON.stringify(orderData)
-         },
-         onSuccess: async (reference: string) => {
-           try {
-             const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
-             const response = await fetch(`${backendUrl}/api/verify-payment`, {
-               method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ reference, orderData })
-             });
-
-             const result = await response.json();
-
-             if (result.success) {
-               clearCart();
-               navigate('/thank-you', { state: { name: formData.firstName } });
-             } else {
-               throw new Error(result.error || 'Order creation failed');
-             }
-           } catch (err: any) {
-             console.error('Order verification failed:', err);
-             alert('Payment verification failed. Please contact support.');
-           } finally {
-             setLoading(false);
-           }
-         },
-        onCancel: () => {
-          setLoading(false);
-          alert('Payment was cancelled.');
-        },
-        onClose: () => {
-          setLoading(false);
-        }
-      };
-
-      const paystack = (window as any).PaystackPop;
-      if (!paystack) {
-        throw new Error('Paystack has not loaded. Please check your internet connection.');
-      }
-      paystack.checkout(paystackConfig);
+      // Redirect to Paystack payment page
+      window.location.href = `${paystackPageUrl}?${params.toString()}`;
 
     } catch (error: any) {
       console.error("Payment error:", error);
