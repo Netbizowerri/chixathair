@@ -5,7 +5,9 @@ export interface Product {
   price: number;
   description: string;
   category: string;
+  // Images stored as Base64 data URLs (compressed < 200KB each) — BASE64_FIRESTORE
   images: string[];
+  // Video stored as external URL (Vimeo, YouTube, etc.) — EXTERNAL_URL
   video?: string;
   stock: number;
   isFeatured?: boolean;

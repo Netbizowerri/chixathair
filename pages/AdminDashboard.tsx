@@ -28,7 +28,7 @@ import {
   Clock,
   ShoppingCart
 } from 'lucide-react';
-import { getProducts, saveProduct, deleteProduct, getOrders, updateOrderStatus, uploadFile, seedDatabase, getCategories, saveCategory, deleteCategory } from '../services/firebase';
+import { getProducts, saveProduct, deleteProduct, getOrders, updateOrderStatus, uploadFileAdmin, seedDatabase, getCategories, saveCategory, deleteCategory } from '../services/firebase';
 import { INITIAL_PRODUCTS } from '../data';
 
 interface AdminDashboardProps {
@@ -99,21 +99,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ refreshProducts }) => {
     setIsModalOpen(true);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video', index?: number) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setIsUploading(true);
     try {
-      const url = await uploadFile(file, file.name);
-      if (type === 'image' && index !== undefined && editingProduct) {
+      const base64 = await uploadFileAdmin(file, file.name);
+      if (editingProduct) {
         const newImages = [...(editingProduct.images || ['', '', ''])];
-        newImages[index] = url;
+        newImages[index] = base64;
         setEditingProduct({ ...editingProduct, images: newImages });
-      } else if (type === 'video' && editingProduct) {
-        setEditingProduct({ ...editingProduct, video: url });
       }
-    } catch {
-      alert("Media upload failed. Ensure your connection is stable.");
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      alert("Upload failed: " + (error?.message || "Please check your connection and try again."));
     } finally {
       setIsUploading(false);
     }
@@ -124,10 +123,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ refreshProducts }) => {
     if (!editingProduct || isUploading) return;
     const cleanedImages = (editingProduct.images || []).filter(img => img.trim() !== '');
     if (cleanedImages.length === 0) return alert('At least one image is required.');
-    await saveProduct({ ...editingProduct, images: cleanedImages });
-    setIsModalOpen(false);
-    loadData();
-    refreshProducts();
+    try {
+      await saveProduct({ ...editingProduct, images: cleanedImages });
+      setIsModalOpen(false);
+      loadData();
+      refreshProducts();
+      alert('Product saved successfully!');
+    } catch (error: any) {
+      console.error('Save error:', error);
+      alert('Failed to save product: ' + (error?.message || 'Unknown error'));
+    }
   };
 
   const handleManualSync = async () => {
@@ -812,7 +817,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ refreshProducts }) => {
                               type="file"
                               accept="image/*"
                               className="hidden"
-                              onChange={(e) => handleFileUpload(e, 'image', idx)}
+                               onChange={(e) => handleFileUpload(e, idx)}
                               disabled={isUploading}
                             />
                           </label>
@@ -824,37 +829,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ refreshProducts }) => {
 
                 <div className="space-y-3">
                   <label className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-2">
-                    <Video className="w-3.5 h-3.5" /> Video (optional)
+                    <Video className="w-3.5 h-3.5" /> Video URL (optional)
                   </label>
-                  <div className="relative aspect-video bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 overflow-hidden group">
-                    {editingProduct.video ? (
-                      <>
-                        <video src={editingProduct.video} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            type="button"
-                            onClick={() => setEditingProduct({ ...editingProduct, video: '' })}
-                            className="bg-white text-black px-4 py-2 rounded-full text-[8px] font-black uppercase tracking-widest"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors gap-2">
-                        <Video className="w-6 h-6 text-gray-300" />
-                        <span className="text-[8px] font-black uppercase tracking-widest text-gray-400">Upload Video</span>
-                        <input
-                          type="file"
-                          accept="video/*"
-                          className="hidden"
-                          onChange={(e) => handleFileUpload(e, 'video')}
-                          disabled={isUploading}
-                        />
-                      </label>
-                    )}
-                  </div>
-                  <p className="text-[7px] text-gray-400 uppercase tracking-widest text-center">MP4, MOV. Max 50MB.</p>
+                  {editingProduct.video ? (
+                    <div className="relative aspect-video bg-gray-50 rounded-2xl border-2 border-gray-100 overflow-hidden group">
+                      <video src={editingProduct.video} className="w-full h-full object-cover" controls />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={() => setEditingProduct({ ...editingProduct, video: '' })}
+                          className="bg-white text-black px-4 py-2 rounded-full text-[8px] font-black uppercase tracking-widest"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <input
+                      type="url"
+                      value={editingProduct.video || ''}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, video: e.target.value })}
+                      placeholder="https://vimeo.com/... or youtube.com/watch?v=..."
+                      className="w-full bg-gray-50 border border-gray-100 px-5 py-3.5 rounded-2xl outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand text-sm transition-all"
+                    />
+                  )}
+                  <p className="text-[7px] text-gray-400 uppercase tracking-widest text-center">Videos hosted on Vimeo, YouTube, etc. Paste the share URL.</p>
                 </div>
 
                 <div className="pt-4">

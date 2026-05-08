@@ -1,0 +1,10 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Public read for any existing legacy files
+    match /artisan-media/{allPaths=**} {
+      allow read: if true;
+      allow write: if false; // Storage disabled on Spark plan — images stored as Base64 in Firestore
+    }
+  }
+}

@@ -125,7 +125,7 @@ const Home: React.FC<HomeProps> = ({ products }) => {
               </span>
             </div>
 
-            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black mb-8 leading-[1.1] tracking-tight">
+            <h1 className="text-3xl sm:text-5xl md:text-7xl font-black mb-8 leading-[1.1] tracking-tight">
               <div className="text-reveal">
                 <span className="delay-100">{SLIDES[currentSlide].title}</span>
               </div>

@@ -1,0 +1,10 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "mcp": {
+    "github": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-github"]
+      // Note: Set GITHUB_PERSONAL_ACCESS_TOKEN environment variable in your shell or CI
+    }
+  }
+}

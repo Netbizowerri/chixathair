@@ -13,14 +13,8 @@ import {
   Timestamp,
   Firestore
 } from "firebase/firestore";
-import {
-  getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL,
-  FirebaseStorage
-} from "firebase/storage";
 import { Product, Order } from "../types";
+import imageCompression from "browser-image-compression";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -50,24 +44,44 @@ const getDB = (): Firestore | null => {
   }
 };
 
-const getStorageInstance = (): FirebaseStorage | null => {
+// Compress image and convert to Base64 data URL for Firestore storage
+export const compressImageToBase64 = async (file: File): Promise<string> => {
+  const options = {
+    maxSizeMB: 0.2, // ~200KB max per image to stay under 1MB doc limit with 3 images
+    maxWidthOrHeight: 800,
+    useWebWorker: true
+  };
+
   try {
-    const app = getFirebase();
-    return getStorage(app);
+    const compressedFile = await imageCompression(file, options);
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(compressedFile);
+    });
+    return base64;
   } catch (error) {
-    console.error("Storage init error:", error);
-    return null;
+    console.error("Image compression error:", error);
+    // Fallback: convert original file to base64
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   }
 };
 
-// Media Upload
-export const uploadFile = async (file: File, path: string): Promise<string> => {
-  const storage = getStorageInstance();
-  if (!storage) throw new Error("Storage unavailable");
+// Admin Media Upload — stores image as Base64 directly in Firestore
+export const uploadFileAdmin = async (file: File, filename: string): Promise<string> => {
+  // Only images supported for Base64 storage (videos must use external URL)
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Only image files can be uploaded. Videos must be added via URL.');
+  }
 
-  const storageRef = ref(storage, `artisan-media/${Date.now()}-${path}`);
-  const snapshot = await uploadBytes(storageRef, file);
-  return await getDownloadURL(snapshot.ref);
+  const base64 = await compressImageToBase64(file);
+  return base64;
 };
 
 // Products
